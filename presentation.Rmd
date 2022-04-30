@@ -110,7 +110,7 @@ z kolumn:
 - Location (Yes/No) - czy uczy się i mieszka w tym samym mieście
 - Load.shedding (Low/High) - niestabilność sieci elektrycznej, częstotliwość zaników prądu
 
-# Dane
+# Dane - ciąg dalszy
 
 - Financial.Condition (Poor/Mid/Rich) - kondycja finansowa ucznia
 - Internet.Type(2G/3G/4G) - rodzaj połączenia internetowego wykorzystywanego do nauki
@@ -166,17 +166,57 @@ ggplot(df, aes(Adaptivity.Level)) +
   scale_x_discrete(drop = FALSE)
 ```
 
+# Tworzenie struktury sieci
 
+Aby znaleźć najlepszą strukturę sieci wykorzystałem fakt, iż sieć może zostać
+wykorzystana nie tylko do wnioskowania, ale też predykcji. Wybiorę sieć, która
+dokonuje najlepszej predykcji.
 
+Przy czym skorzystam też z czarnej listy i nie pozwolę na utworzenie krawędzi 
+między wierzchołkami: Gender, Age, Class.Duration. Gdyż uważam, że zmienne te
+powinny być niezależne.
 
+# Porównanie algorytmów na zbiorze danych
 
+```{r,echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+blacklist <- set2blacklist(c("Gender", "Age", "Class.Duration"))
 
+algorithm = c("pc.stable", "gs", "iamb", "fast.iamb", 
+              "inter.iamb", "iamb.fdr")
 
+loss.val <- c()
+for(alg in algorithm) {
+  l <- loss(bn.cv(df, 
+                  bn = alg,loss="pred" , 
+                  loss.args = list(target = "Adaptivity.Level"),
+                  fit.args = list(blacklist = blacklist)
+                  ))[[1]]
+  loss.val <- c(loss.val, l)
+}
+res <- data.frame(algorithm, loss.val) 
 
+ggplot(res, aes(x=algorithm, y=loss.val, fill=as.factor(algorithm))) + 
+  geom_bar(stat = "identity", width = 0.7) +
+  scale_fill_brewer(palette = "Set1") +
+  theme(legend.position="none")
+```
 
+# Otoczka Markova
 
+Dla zmiennej losowej $T$ **otoczką markova** (Markov Blanket) nazywamy zbiór zmienych losowych, które wnoszą informację o zmiennej $T$. Usuwając jakąkolwiek zmienną z otoczki Markova tracimy informację o zmiennej $T$.
 
+Mając zmienną losową $T$ oraz zbiór $S = {X_1, \dots, X_n}$, otoczką Markova 
+jest dowolny podzbiór $S_1$, który spełnia warunek:
 
+$$ T\perp \!\!\!\perp {\mathcal {S}}\backslash {\mathcal {S}}_{1}\mid {\mathcal {S}}_{1} $$
+W sieciach Bayesowskich, otoczka markova wierzchołka $T$ zawiera jego rodziców, dzieci oraz wszystkich rodziców jego dzieci.
+
+# Algorytm IAMB (Incremental Association Markov Blanket)
+
+Faza pierwsza. Szacujemy, ktore wierzchołki mogą należeć do **otoczki markova** wierzchołka $T$ tj. $MB(T)$, umieszczać je będziemy w $CMB$.
+
+Wierzchołek $X$ umieścimy w $CMD$ jeżeli maksymalizuje (zwiększa) on funkcję 
+$f(X; T | CMB)$ będącą **Informacja wzajemną** zmienn
 
 
 
