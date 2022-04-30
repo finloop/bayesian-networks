@@ -42,3 +42,7 @@ vignettes/*.pdf
 .envrc
 
 labs
+
+presentation.tex
+presentation.pdf
+presentation_files
