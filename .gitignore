@@ -40,3 +40,5 @@ vignettes/*.pdf
 
 # My config
 .envrc
+
+labs
