@@ -255,7 +255,7 @@ ggplot(data, aes(fill=Adaptivity.Level, y=Freq, x=Adaptivity.Level)) +
 ```
 \normalsize
 
-# Wnioskowanie
+# Wnioskowanie - wiek
 
 Wiedząc, że poziom adaptacji jest "High", do jakiej grupy wiekowej należała dana
 osoba?
@@ -275,7 +275,7 @@ ggplot(data, aes(y=Age, x=age)) +
     xlab("Grupa wiekowa")
 ```
 
-# Wnioskowanie 
+# Wnioskowanie - wiek i kondycja finansowa
 
 Wiedząc, że poziom adaptacji jest "High" oraz, że jej kondycja finansowa jest "Poor" 
 do jakiej grupy wiekowej należała dana osoba?
@@ -296,12 +296,25 @@ ggplot(data, aes(y=Age, x=age)) +
     xlab("Grupa wiekowa")
 ```
 
+# Wnioskowanie - kondycja finansowa
+
+Wiemy, że kondycja finansowa studenta/ucznia to "Rich". Jaki jest rozkład
+prawdopodobieństwa poziomu adaptacji?
+
 ```{r}
 warunek <- setEvidence(j,
                       nodes=c("Financial.Condition"), 
-                      states = c("Poor"))
+                      states = c("Rich"))
 
-querygrain(warunek, c("Adaptivity.Level", "Age"), type="conditional")
+d <- querygrain(warunek, c("Adaptivity.Level"))
+
+age <- names(d$Adaptivity.Level)
+data <- data.frame(age=age, Age=d)
+ggplot(data, aes(y=Adaptivity.Level, x=age)) + 
+    geom_bar(position="dodge", stat="identity") +
+    theme(legend.position="none") +
+    ylab("Prawdopodobieństwo") +
+    xlab("Poziom adaptacji")
 ```
 
 ```{r}
