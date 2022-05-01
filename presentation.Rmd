@@ -301,7 +301,7 @@ ggplot(data, aes(y=Age, x=age)) +
 Wiemy, że kondycja finansowa studenta/ucznia to "Rich". Jaki jest rozkład
 prawdopodobieństwa poziomu adaptacji?
 
-```{r}
+```{r, echo=FALSE, warning=FALSE,error=FALSE}
 warunek <- setEvidence(j,
                       nodes=c("Financial.Condition"), 
                       states = c("Rich"))
@@ -317,10 +317,26 @@ ggplot(data, aes(y=Adaptivity.Level, x=age)) +
     xlab("Poziom adaptacji")
 ```
 
-```{r}
-warunek <- setEvidence(j,
-                      nodes=c( "Financial.Condition", "Adaptivity.Level", "Age"), 
-                      states = c("Poor", "High", "21-25"))
+# Wnioskowanie - kondycja finansowa
 
-querygrain(warunek, c("Education.Level"))
+Wiemy, że kondycja finansowa studenta/ucznia to "Rich". Jaki jest rozkład
+prawdopodobieństwa poziomu adaptacji pod warunkiem każdego z przedziałów wiekowych?
+
+```{r, echo=FALSE, warning=FALSE,error=FALSE}
+warunek <- setEvidence(j,
+                      nodes=c( "Financial.Condition"), 
+                      states = c("Rich"))
+
+d <- querygrain(warunek, nodes = c("Adaptivity.Level", "Age") , type="conditional", result = "array")
+data <- as.data.frame.table(d)
+
+ggplot(data, aes(fill=Adaptivity.Level, y=Freq, x=Adaptivity.Level)) + 
+    geom_bar(position="dodge", stat="identity") +
+    facet_wrap(~Age) +
+    theme(legend.position="none") +
+    xlab("")
 ```
+
+
+
+
