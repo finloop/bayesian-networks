@@ -47,12 +47,12 @@ knitr::opts_chunk$set(echo = TRUE, fig.align="center")
 knitr::opts_chunk$set(
  fig.width = 6,
  fig.asp = 0.8,
- out.width = "80%"
+ out.width = "70%"
 )
 Sys.setlocale("LC_ALL", "Polish")
 
 
-theme_ben <- function(base_size = 18) {
+theme_ben <- function(base_size = 16) {
   theme_bw(base_size = base_size) %+replace%
     theme(
       # L'ensemble de la figure
@@ -211,16 +211,103 @@ jest dowolny podzbiór $S_1$, który spełnia warunek:
 $$ T\perp \!\!\!\perp {\mathcal {S}}\backslash {\mathcal {S}}_{1}\mid {\mathcal {S}}_{1} $$
 W sieciach Bayesowskich, otoczka markova wierzchołka $T$ zawiera jego rodziców, dzieci oraz wszystkich rodziców jego dzieci.
 
+# Otoczka Markowa
+
+![Otoczka Markowa wierzchołka T, MB(T)](img/markov_blanket.png){width=50%}
+
 # Algorytm IAMB (Incremental Association Markov Blanket)
 
-Faza pierwsza. Szacujemy, ktore wierzchołki mogą należeć do **otoczki markova** wierzchołka $T$ tj. $MB(T)$, umieszczać je będziemy w $CMB$.
+Faza pierwsza. Szacujemy, ktore wierzchołki mogą należeć do **otoczki markova** wierzchołka $T$ tj. $MB(T)$, umieszczać je będziemy w $CMB$. Wierzchołek $X$ umieścimy w $CMD$ jeżeli:
 
-Wierzchołek $X$ umieścimy w $CMD$ jeżeli maksymalizuje (zwiększa) on funkcję 
-$f(X; T | CMB)$ będącą **Informacja wzajemną** zmienn
+- maksymalizuje (zwiększa) on funkcję $f(X, T | CMB)$ będącą **Informacja wzajemną** zmiennych $X$ i $T$ pod warunkiem $CMB$
+- oraz $X = S-{T}-CMB$ nie jest niezależna warukowo od $T$ pod waruniem $CMB$.
 
+W fazie drugiej usuwamy z $CMD$ wszystkie wierzchołki $X$, dla których zachodzi:
+$$I(X; T | CMB-\{X\}) $$
+$I(X, T | Z)$ oznacza warunkową niezależność $X$ od $T$ pod warunkiem $Z$.
 
+# Struktura utworzonej sieci
 
+```{r, echo=FALSE, warning=FALSE}
+dag <- cextend(iamb(df, blacklist = blacklist))
+fit <- bn.fit(dag, df)
+graphviz.plot(dag, layout='dot')
+```
 
+# Wnioskowanie
 
+```{r, output = FALSE, echo=FALSE, warning=FALSE,error=FALSE}
+library(gRain)
+j <- compile(as.grain(fit))
+```
+W którym przedziale wiekowym poziom adaptacji jest największy?
 
+\scriptsize
+```{r, echo=FALSE}
+d <- querygrain(j, nodes = c("Adaptivity.Level", "Age") , type="conditional", result = "array")
+data <- as.data.frame.table(d)
 
+ggplot(data, aes(fill=Adaptivity.Level, y=Freq, x=Adaptivity.Level)) + 
+    geom_bar(position="dodge", stat="identity") +
+    facet_wrap(~Age) +
+    theme(legend.position="none") +
+    xlab("")
+```
+\normalsize
+
+# Wnioskowanie
+
+Wiedząc, że poziom adaptacji jest "High", do jakiej grupy wiekowej należała dana
+osoba?
+
+```{r, echo=FALSE, warning=FALSE,error=FALSE}
+warunek <- setEvidence(j,
+                      nodes=c("Adaptivity.Level"), 
+                      states = c("High"))
+
+d <- querygrain(warunek, c("Age"), result = "array")
+age <- names(d$Age)
+data <- data.frame(age=age, Age=d)
+ggplot(data, aes(y=Age, x=age)) + 
+    geom_bar(position="dodge", stat="identity") +
+    theme(legend.position="none") +
+    ylab("Prawdopodobieństwo") +
+    xlab("Grupa wiekowa")
+```
+
+# Wnioskowanie 
+
+Wiedząc, że poziom adaptacji jest "High" oraz, że jej kondycja finansowa jest "Poor" 
+do jakiej grupy wiekowej należała dana osoba?
+
+```{r, echo=FALSE, warning=FALSE,error=FALSE}
+warunek <- setEvidence(j,
+                      nodes=c("Adaptivity.Level", "Financial.Condition"), 
+                      states = c("High", "Poor"))
+
+d <- querygrain(warunek, c("Age"))
+
+age <- names(d$Age)
+data <- data.frame(age=age, Age=d)
+ggplot(data, aes(y=Age, x=age)) + 
+    geom_bar(position="dodge", stat="identity") +
+    theme(legend.position="none") +
+    ylab("Prawdopodobieństwo") +
+    xlab("Grupa wiekowa")
+```
+
+```{r}
+warunek <- setEvidence(j,
+                      nodes=c("Financial.Condition"), 
+                      states = c("Poor"))
+
+querygrain(warunek, c("Adaptivity.Level", "Age"), type="conditional")
+```
+
+```{r}
+warunek <- setEvidence(j,
+                      nodes=c( "Financial.Condition", "Adaptivity.Level", "Age"), 
+                      states = c("Poor", "High", "21-25"))
+
+querygrain(warunek, c("Education.Level"))
+```
