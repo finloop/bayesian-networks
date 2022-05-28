@@ -3,7 +3,7 @@ title: "Analiza adaptacji studentów do nauki zdalnej"
 author: |
   | Krawiec Piotr
   | Inżynieria i analiza danych, 3 Rok
-date: "29/12/2021"
+date: "28/05/2022"
 output:
   beamer_presentation:
     theme: Antibes
@@ -234,12 +234,63 @@ fit <- bn.fit(dag, df)
 graphviz.plot(dag, layout='dot')
 ```
 
-# Wnioskowanie
+# Wnioskowanie - teoria
+
+Do wnioskowania wykorzystuje się wzór Bayesa: $P(A|B) = \frac{P(A \cap B)}{P(B)}$.
+Interesuje nas przyczyna, pod pewnymi warunkami: $P(Cause \ | \ Evidence) = \frac{P(Cause \ \cap \ Evidence)}{P(Evidence)}$,
+natomiast posiadamy warunki i ich przyczynę: $P(Evidence \ | \ Cause) = \frac{P(Cause \ \cap \ Evidence)}{P(Cause)}$ i po przekształceniu:
+$$ P(Cause|Evidence) = P(Evidence \ | \ Cause) \ \frac{P(Cause)}{P(Evidence)} $$
+
+# Wnioskowanie - przykład z teorii - tablice
+
+Jakie jest prawdopodobieństwo, że `Financial.Condition` jest `Poor`, wiedząc, że
+`Load.shedding` jest `High`
+
+| Mid         | Poor        | Rich       |
+|-------------|-------------|------------|
+| 0.72863071  | 0.20082988  | 0.07053942 |
+
+Table: Tablica prawdopodobieństw Financial.Condition
+
+| High      Low     |
+|-------------------|
+| 0.166805 0.833195 |
+
+Table: Tablica prawdopodobieństw Load.shedding
+
+# Wnioskowanie - przykład z teorii - tablice
+
+| Load.shedding | Mid       | Poor      | Rich      |
+|---------------|-----------|-----------|-----------|
+| High          | 0.1503417 | 0.2851240 | 0.0000000 |
+| Low           | 0.8496583 | 0.7148760 | 1.0000000 |
+
+Table: Tablica prawdopodobieństw warunowych Load.shedding | Financial.Condition
+
+# Wnioskowanie - przykład z teorii - obliczenia
+\small
+$$ P(F.C=Poor \ | \ L=High) = P(L=High \ | \ F.C=Poor) \ \frac{P(F.C=Poor)}{P(L=High)} $$
+
+$$ P(F.C=Poor \ | \ L=High) = 0.2851240 \cdot \frac{0.20082988}{0.166805} \approx 0.343283 $$
+
+\normalsize
 
 ```{r, output = FALSE, echo=FALSE, warning=FALSE,error=FALSE}
 library(gRain)
 j <- compile(as.grain(fit))
 ```
+
+```{r, echo=FALSE, warning=FALSE,error=FALSE}
+warunek <- setEvidence(j,
+                      nodes=c("Load.shedding"), 
+                      states = c("High"))
+
+d <- querygrain(warunek, c("Financial.Condition"), result = "array")
+d
+```
+
+# Wnioskowanie
+
 W którym przedziale wiekowym poziom adaptacji jest największy?
 
 \scriptsize
@@ -337,6 +388,9 @@ ggplot(data, aes(fill=Adaptivity.Level, y=Freq, x=Adaptivity.Level)) +
     xlab("")
 ```
 
+# Koniec
+\center
+Dziękuję za uwagę
 
 
 
